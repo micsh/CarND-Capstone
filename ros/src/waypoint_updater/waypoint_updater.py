@@ -43,6 +43,7 @@ class WaypointUpdater(object):
 		# Current pose of the vehicle
 		self.pose = None
 		self.waypoints = None 
+		self.rate = rospy.Rate(10)		
 
 		rospy.spin()
 
@@ -53,7 +54,7 @@ class WaypointUpdater(object):
             		nextWaypoint, nextWaypointIdx = self.NextWaypoint(self.pose, self.waypoints)
 			wpX = nextWaypoint.pose.pose.position.x
 			wpY = nextWaypoint.pose.pose.position.y
-			rospy.loginfo('New next waypoint:%s, x:%s, y:%s', nextWaypointIdx, wpX, wpY)
+			#rospy.loginfo('New next waypoint:%s, x:%s, y:%s', nextWaypointIdx, wpX, wpY)
             		finalWaypoints = self.waypoints[nextWaypointIdx:nextWaypointIdx+LOOKAHEAD_WPS]
 
                 	# set the velocity for lookahead waypoints
@@ -79,9 +80,10 @@ class WaypointUpdater(object):
 		quaternion = (pose.orientation.x, pose.orientation.y, pose.orientation.z, pose.orientation.w)
         	_, _, yaw = tf.transformations.euler_from_quaternion(quaternion)
 
-		rospy.loginfo('Vehicle Pose Received - x:%s, y:%s, yaw:%s', x, y, yaw)
+		#rospy.loginfo('Vehicle Pose Received - x:%s, y:%s, yaw:%s', x, y, yaw)
 		if self.waypoints is not None:
             		self.Update()
+			self.rate.sleep()
 
 	def waypoints_cb(self, msg):
 		# Publish to /base_waypoints only once
@@ -129,7 +131,7 @@ class WaypointUpdater(object):
 				closestWaypointIdx = i
 
 		closestWaypoint = waypoints[closestWaypointIdx]
-		rospy.loginfo('Distance to closest waypoint:%s is %s', closestWaypointIdx, dist)
+		#rospy.loginfo('Distance to closest waypoint:%s is %s', closestWaypointIdx, dist)
 		return closestWaypoint, closestWaypointIdx
 
 
@@ -153,7 +155,7 @@ class WaypointUpdater(object):
 
 		nextWaypointIdx = closestWaypointIdx
 		nextWaypoint = waypoints[nextWaypointIdx]
-		rospy.loginfo('Found next waypoint:%s', nextWaypointIdx)
+		#rospy.loginfo('Found next waypoint:%s', nextWaypointIdx)
 
 		return nextWaypoint, nextWaypointIdx
 
