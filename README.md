@@ -6,11 +6,11 @@ This is the project repo for the final project of the Udacity Self-Driving Car N
 
 This repository is maintained by:
 
-Chih Sheng Chen (bobon@mirlab.org)
-Theodore King (etphilipking@gmail.com)
-Michael Shalala (mshalala@gmail.com)
-Kaiyu Qian (kaiyu_q@yahoo.com)
-Franz Pucher (franz.pucher@gmail.com)
+Chih Sheng Chen (bobon@mirlab.org)<br/>
+Theodore King (etphilipking@gmail.com)<br/>
+Michael Shalala (mshalala@gmail.com)<br/>
+Kaiyu Qian (kaiyu_q@yahoo.com)<br/>
+Franz Pucher (franz.pucher@gmail.com)<br/>
 
 ## Introduction
 
