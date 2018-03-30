@@ -64,7 +64,8 @@ class TLDetector(object):
 
     def pose_cb(self, msg):
         self.pose = msg.pose
-        self.car_position = self.get_closest_waypoint(self.pose)
+	if self.waypoints:
+            self.car_position = self.get_closest_waypoint(self.pose)
         # self.pose.position.[x,y,z]
         # self.pose.orientation.[x,y,z,w] # Quanternion
         # rospy.loginfo('[CSChen] self.pose.position.(x,y,z)=({},{},{})'.format(self.pose.position.x,self.pose.position.y,self.pose.position.z))
