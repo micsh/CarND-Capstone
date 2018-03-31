@@ -29,7 +29,7 @@ TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this number
 
 # New defines
-RATE = 10
+RATE = 5
 TARGET_SPEED_MPH = 10 # Desired velocity
 MAX_DECEL = .5
 
@@ -112,6 +112,7 @@ class WaypointUpdater(object):
             		lane.waypoints = finalWaypoints
         	else:
             		lane.waypoints = self.decelerate_waypoints(finalWaypoints, closest_idx)
+			rospy.loginfo('[waypoint_updater] stopping at red light %s and vehicle is at %s', self.stopline_wp_idx, self.NextWaypoint()) 
 
         	return lane
 
@@ -123,7 +124,7 @@ class WaypointUpdater(object):
 			p.pose = wp.pose
 
 			# Two waypoints back from stopping line so that the front of the car stops in front of the stopping line
-			stop_idx = max(self.stopline_wp_idx - closest_idx -2, 0)
+			stop_idx = max(self.stopline_wp_idx - closest_idx - 2, 0)
 			# Get the distance between the current way point i and the stop line idx - 2 
 			# The Distance function returns zero if the vehicle is behind the stop line
 			dist = self.Distance(waypoints, i, stop_idx)
@@ -139,7 +140,7 @@ class WaypointUpdater(object):
 			# As a maximum velocity, keep the one that was given before to the current waypoint
 			p.twist.twist.linear.x = min(vel, wp.twist.twist.linear.x)
 			temp.append(p)
-
+		rospy.loginfo('[waypoint updater] last vel %s', temp[-1].twist.twist.linear.x)
 		return temp
 
 
@@ -171,7 +172,8 @@ class WaypointUpdater(object):
 	def traffic_cb(self, msg):
 		# TODO: Callback for /traffic_waypoint message. Implement
 		self.stopline_wp_idx = msg.data
-		rospy.loginfo('[waypoint updater] Received traffic waypoint stop line index: %s', self.stopline_wp_idx) 
+		if self.stopline_wp_idx != -1:
+			rospy.loginfo('[waypoint updater] Received traffic waypoint stop line index: %s', self.stopline_wp_idx) 
 
 	def obstacle_cb(self, msg):
 	# TODO: Callback for /obstacle_waypoint message. We will implement it later

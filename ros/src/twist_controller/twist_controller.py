@@ -38,7 +38,7 @@ class Controller(object):
         
 	# Create longitudinal pid controller
         #self.throttle_pid = PID(0.5,0.00001,0.0,0,1)
-        self.throttle_pid = PID(0.1, 0.01, 0.01, parameters['decel_limit'], parameters['accel_limit'])
+        self.throttle_pid = PID(0.8, 0.1, 0.1, parameters['decel_limit'], parameters['accel_limit'])
 	
 	# Create provided yaw controller object for lateral control
 	self.min_speed = 0
