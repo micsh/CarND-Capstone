@@ -23,7 +23,9 @@ class TLDetector(object):
         rospy.init_node('tl_detector')
 
         self.pose = None
-        self.waypoints = None
+        self.baseWaypoints = None
+	self.waypoints2D = None
+	self.waypointTree = None
         self.camera_image = None
         self.lights = []
 
@@ -87,10 +89,10 @@ class TLDetector(object):
         # self.lights[i].state has velue TrafficLight.[RED, YELLOW, GREEN, UNKNOWN]
         # rospy.loginfo('[CSChen] Received %s traffic lights', len(self.lights))  # 8 traffic lights
 
-        if not self.is_classfied_waypoints_by_tl and not self.waypoints==None:
-            self.waypoints_to_tl_idx = self.classify_waypoints_by_tl()
-            rospy.loginfo('[CSChen] len(self.waypoints_to_tl_idx)={}. NOTE: This msg should not show up more than twice'.format(len(self.waypoints_to_tl_idx)))
-            self.is_classfied_waypoints_by_tl = True
+        #if not self.is_classfied_waypoints_by_tl and not self.waypoints==None:
+        #    self.waypoints_to_tl_idx = self.classify_waypoints_by_tl()
+        #    rospy.loginfo('[CSChen] len(self.waypoints_to_tl_idx)={}. NOTE: This msg should not show up more than twice'.format(len(self.waypoints_to_tl_idx)))
+        #    self.is_classfied_waypoints_by_tl = True
 
         # rospy.loginfo('[CSChen] Received self.lights[3].pose.pose.position.y={}'.format(self.lights[3].pose.pose.position.y))
         # rospy.loginfo('[CSChen] Received self.lights[3].pose.pose.orientation.w={}'.format(self.lights[3].pose.pose.orientation.w))
@@ -201,25 +203,25 @@ class TLDetector(object):
             # because the topic '/current_pose' is updated faster than '/image_color'
             # we can directly use self.car_position which is calculate by self.pose_cb
             #car_position = self.car_position
-	    car_wp_idx = self.get_closest_waypoint_idx(self.pose)
+	    car_wp_idx = self.get_closest_waypoint(self.pose.position.x, self.pose.position.y)
 
 	    # Find the closest visible traffic light (if one exists)
 	    diffNumWp = len(self.baseWaypoints)
 	    for i, light in enumerate(self.lights):  
 		# Get stop line waypoint idx
 	        line = stop_line_positions[i]
-	        stop_wp_idx = self.get_closest_waypoint(line([0], line[1])
+	        stop_wp_idx = self.get_closest_waypoint(line[0], line[1])
+		#stop_wp_idx = 0
 		# Find closest stop line waypoint index
 		# Number of waypoints between the current (i) stop line idx and 
 		# the closest waypoint index to the current vehicle position
-	        #d = stop_wp_idx - car_wp_idx
-		a = 5
-	        if a >= 0 and d < wpCount:
+	        d = stop_wp_idx - car_wp_idx
+	        if d >= 0 and d < diffNumWp:
 	            diffNumWp = d
 	            closest_light = light
 	            line_wp_idx = stop_wp_idx
 
-	if closes_light:
+	if closest_light:
 	    state = self.get_light_state(closest_light)
 	    return line_wp_idx, state
 
