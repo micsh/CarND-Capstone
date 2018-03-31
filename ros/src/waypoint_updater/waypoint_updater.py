@@ -9,6 +9,8 @@ import math
 
 # New imports
 import tf
+from scipy.spatial import KDTree
+import numpy as np
 
 '''
 This node will publish waypoints from the car's current position to some `x` distance ahead.
@@ -27,6 +29,7 @@ TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this number
 
 # New defines
+RATE = 10
 TARGET_SPEED_MPH = 10 # Desired velocity
 MAX_DECEL = .5
 
@@ -36,9 +39,11 @@ class WaypointUpdater(object):
 
 		# Current pose of the vehicle
 		self.pose = None
-		self.waypoints = None 
+		self.baseWaypoints = None
+		self.waypoints2D = None
+		self.waypointTree = None 
 		self.stopline_wp_idx = -1
-		self.rate = rospy.Rate(10)		
+		self.rate = rospy.Rate(RATE)		
 		
 		# Use queue_size=1 to work only on the latest vehicle pose
 		rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb, queue_size=1)
@@ -49,38 +54,54 @@ class WaypointUpdater(object):
 
 		self.final_waypoints_pub = rospy.Publisher('final_waypoints', Lane, queue_size=1)
 
-		rospy.spin()
+		# Removed rospy.spin() to use a loop function instead
+		# This gives better control over the publishing frequency
+		self.loop()
 
 
-	def Update(self):
-		if self.pose is not None:
-			# Find closest waypoint
-            		nextWaypoint, nextWaypointIdx = self.NextWaypoint(self.pose, self.waypoints)
-			wpX = nextWaypoint.pose.pose.position.x
-			wpY = nextWaypoint.pose.pose.position.y
-			#rospy.loginfo('New next waypoint:%s, x:%s, y:%s', nextWaypointIdx, wpX, wpY)
-            		finalWaypoints = self.waypoints[nextWaypointIdx:nextWaypointIdx+LOOKAHEAD_WPS]
+	def loop(self):
+		while not rospy.is_shutdown():
+			if self.pose and self.waypointTree:
+				# Find closest waypoint
+				nextWaypointIdx = self.NextWaypoint()
+				lane = self.generate_lane(nextWaypointIdx)
+				self.publish_waypoints(lane)
+			self.rate.sleep()
 
-                	# set the velocity for lookahead waypoints
-                	for i in range(len(finalWaypoints) - 1):
-                    		# convert 10 miles per hour to meters per sec
-                    		self.set_waypoint_velocity(finalWaypoints, i, (TARGET_SPEED_MPH * 1609.34) / (60 * 60))
 
-			lane = Lane()
-			lane.header.frame_id = '/world'
-			lane.header.stamp = rospy.Time(0)
-			lane.waypoints = finalWaypoints
+
+	def NextWaypoint(self):
+		x = self.pose.position.x
+		y = self.pose.position.y
+		# Query the KD tree to give us the first closest item to the current vehicle (x,y) position
+		# Because we only need the index of this coordinate we use [1]
+		closestIdx = self.waypointTree.query([x, y], 1)[1]
+
+		# Check if closest is ahead or behind the vehicle 
+		closestCoord = self.waypoints2D[closestIdx]
+		prevCoord = self.waypoints2D[closestIdx-1]
 		
-			self.final_waypoints_pub.publish(lane)
+		# Equation for hyperplane through closestCords
+		closestVec = np.array(closestCoord)
+		prevVec = np.array(prevCoord)
+		posVec = np.array([x, y])
 
-	def generate_lane(self):
+		val = np.dot(closestVec - prevVec, posVec - closestVec)
+
+		if val > 0: # check if angle between the two vectors is obtuse or acute
+			# if the angle is acute the waypoint is behind the vehicle therefore take the next one
+			closestIdx = (closestIdx + 1) % len(self.waypoints2D)
+
+		return closestIdx
+		
+
+	def generate_lane(self, nextWaypointIdx):
 		lane = Lane()
 		lane.header.frame_id = '/world'
 		lane.header.stamp = rospy.Time(0)
 
-	        _, closest_idx = self.ClosestWaypoint(self.pose, self.waypoints)
-        	farthest_idx = closest_idx + LOOKAHEAD_WPS
-        	finalWaypoints = self.waypoints[closest_idx:farthest_idx]
+        	farthest_idx = nextWaypointIdx + LOOKAHEAD_WPS
+        	finalWaypoints = self.baseWaypoints[nextWaypointIdx:farthest_idx]
 
 		# set the velocity for lookahead waypoints
 		for i in range(len(finalWaypoints) - 1):
@@ -90,7 +111,7 @@ class WaypointUpdater(object):
         	if self.stopline_wp_idx == -1 or (self.stopline_wp_idx >= farthest_idx):
             		lane.waypoints = finalWaypoints
         	else:
-            		lane.waypoints = self.decelerate_waypoints(finalWaypoints, closest_idx)
+            		lane.waypoints = self.decelerate_waypoints(finalWaypoints, nextWaypointIdx)
 
         	return lane
 
@@ -112,6 +133,10 @@ class WaypointUpdater(object):
 		return temp
 
 
+	def publish_waypoints(self, lane):
+		self.final_waypoints_pub.publish(lane)
+
+
 	def pose_cb(self, msg):
 		pose = msg.pose
 		self.pose = pose
@@ -122,16 +147,14 @@ class WaypointUpdater(object):
         	_, _, yaw = tf.transformations.euler_from_quaternion(quaternion)
 
 		#rospy.loginfo('Vehicle Pose Received - x:%s, y:%s, yaw:%s', x, y, yaw)
-		if self.waypoints and self.pose:
-            		#self.Update()
-			self.generate_lane()
-			self.rate.sleep()
 
 	def waypoints_cb(self, msg):
 		# Publish to /base_waypoints only once
 		wpCount = len(msg.waypoints)
-		if self.waypoints is None:
-			self.waypoints = msg.waypoints
+		if self.waypoints2D is None:
+			self.baseWaypoints = msg.waypoints
+			self.waypoints2D = [[waypoint.pose.pose.position.x, waypoint.pose.pose.position.y] for waypoint in msg.waypoints]
+			self.waypointTree = KDTree(self.waypoints2D)
 			rospy.loginfo('Received %s waypoints', wpCount)
 
 
@@ -149,6 +172,8 @@ class WaypointUpdater(object):
 	def set_waypoint_velocity(self, waypoints, waypoint, velocity):
 		waypoints[waypoint].twist.twist.linear.x = velocity
 
+				
+
 	def distanceWP(self, waypoints, wp1, wp2):
 		dist = 0
 		dl = lambda a, b: math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2  + (a.z-b.z)**2)
@@ -160,7 +185,7 @@ class WaypointUpdater(object):
 	def distance(self, p1, p2):
         	return math.sqrt((p1.x-p2.x)**2 + (p1.y-p2.y)**2)
 
-
+'''
 	def ClosestWaypoint(self, pose, waypoints):
 		closestDist = 100000.0 # large number
 		closestWaypointIdx = 0
@@ -200,7 +225,7 @@ class WaypointUpdater(object):
 		#rospy.loginfo('Found next waypoint:%s', nextWaypointIdx)
 
 		return nextWaypoint, nextWaypointIdx
-
+'''
 
 if __name__ == '__main__':
 	try:
