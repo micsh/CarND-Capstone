@@ -31,6 +31,10 @@ that we have created in the `__init__` function.
 
 '''
 
+# New defines
+RATE = 50 # 50Hz
+LOGGING = True 
+
 class DBWNode(object):
     def __init__(self):
         rospy.init_node('dbw_node')
@@ -79,17 +83,20 @@ class DBWNode(object):
         
 	self.prev_steer_value = 0
 	self.previousTime = rospy.get_time()
+
+        self.throrrle = self.brake = self.steer = 0.0
+
+	self.rate = rospy.Rate(50) # 50Hz
         self.loop()
 
     def loop(self):
-        rate = rospy.Rate(50) # 50Hz
         while not rospy.is_shutdown():
 	    # TODO: Get predicted throttle, brake, and steering using `twist_controller`
             # You should only publish the control commands if dbw is enabled
             currentTime = rospy.get_time()
             sampleTime = currentTime - self.previousTime
             if(self.Last_Twist_msg != None and self.current_vel != None):
-                throttle, brake, steer = self.controller.control(self.Last_Twist_msg.twist.linear.x,
+                self.throttle, self.brake, self.steer = self.controller.control(self.Last_Twist_msg.twist.linear.x,
                                                                     self.Last_Twist_msg.twist.angular.z,
                                                                     self.current_vel.twist.linear.x,
                                                                     sampleTime)
@@ -97,17 +104,17 @@ class DBWNode(object):
             
             #rospy.loginfo('SteerValue after Control - %s' ,steer)
 	    if self.dbw_status:
-	    	self.publish(throttle, brake, steer)
+	    	self.publish(self.throttle, self.brake, self.steer)
             else:
 		self.controller.reset()
-	    rate.sleep()
+	    self.rate.sleep()
 
     def set_dbw_status(self, msg):
-        
         self.dbw_status = msg.data
 
     def set_twist_msg(self, msg):
         self.Last_Twist_msg  = msg
+	if (LOGGING): rospy.loginfo('[dbw] msg.twist.linear.x %s', msg.twist.linear.x)
 
     def set_current_vel(self, msg):
         self.current_vel = msg
