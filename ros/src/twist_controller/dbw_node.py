@@ -33,7 +33,7 @@ that we have created in the `__init__` function.
 
 # New defines
 RATE = 50 # 50Hz
-LOGGING = True 
+LOGGING = False 
 
 class DBWNode(object):
     def __init__(self):
@@ -91,53 +91,51 @@ class DBWNode(object):
 
     def loop(self):
         while not rospy.is_shutdown():
-	    # TODO: Get predicted throttle, brake, and steering using `twist_controller`
+            # TODO: Get predicted throttle, brake, and steering using `twist_controller`
             # You should only publish the control commands if dbw is enabled
             currentTime = rospy.get_time()
             sampleTime = currentTime - self.previousTime
             if(self.Last_Twist_msg != None and self.current_vel != None):
-                self.throttle, self.brake, self.steer = self.controller.control(self.Last_Twist_msg.twist.linear.x,
-                                                                    self.Last_Twist_msg.twist.angular.z,
-                                                                    self.current_vel.twist.linear.x,
-                                                                    sampleTime)
+                self.throttle, self.brake, self.steer = self.controller.control(self.Last_Twist_msg.twist.linear.x, self.Last_Twist_msg.twist.angular.z, self.current_vel.twist.linear.x, sampleTime)
 
             
             #rospy.loginfo('SteerValue after Control - %s' ,steer)
-	    if self.dbw_status:
-	    	self.publish(self.throttle, self.brake, self.steer)
+            if self.dbw_status:
+                if (LOGGING): rospy.loginfo('[dbw] throttle %s, brake %s, steer %s', self.throttle, self.brake, self.steer)
+                self.publish(self.throttle, self.brake, self.steer)
             else:
-		self.controller.reset()
-	    self.rate.sleep()
+                self.controller.reset()
+            self.rate.sleep()
 
     def set_dbw_status(self, msg):
         self.dbw_status = msg.data
 
     def set_twist_msg(self, msg):
         self.Last_Twist_msg  = msg
-	if (LOGGING): rospy.loginfo('[dbw] msg.twist.linear.x %s', msg.twist.linear.x)
+	#if (LOGGING): rospy.loginfo('[dbw] msg.twist.linear.x %s', msg.twist.linear.x)
 
     def set_current_vel(self, msg):
         self.current_vel = msg
 
     def publish(self, throttle, brake, steer):
-     if throttle!=0:
-        tcmd = ThrottleCmd()
-        tcmd.enable = True
-        tcmd.pedal_cmd_type = ThrottleCmd.CMD_PERCENT
-        tcmd.pedal_cmd = throttle
-        self.throttle_pub.publish(tcmd)
+        if throttle!=0:
+            tcmd = ThrottleCmd()
+            tcmd.enable = True
+            tcmd.pedal_cmd_type = ThrottleCmd.CMD_PERCENT
+            tcmd.pedal_cmd = throttle
+            self.throttle_pub.publish(tcmd)
 
-     else:
-        bcmd = BrakeCmd()
-        bcmd.enable = True
-        bcmd.pedal_cmd_type = BrakeCmd.CMD_TORQUE
-        bcmd.pedal_cmd = brake
-        self.brake_pub.publish(bcmd)
+        else:
+            bcmd = BrakeCmd()
+            bcmd.enable = True
+            bcmd.pedal_cmd_type = BrakeCmd.CMD_TORQUE
+            bcmd.pedal_cmd = brake
+            self.brake_pub.publish(bcmd)
 
-     scmd = SteeringCmd()
-     scmd.enable = True
-     scmd.steering_wheel_angle_cmd = steer
-     self.steer_pub.publish(scmd)
+        scmd = SteeringCmd()
+        scmd.enable = True
+        scmd.steering_wheel_angle_cmd = steer
+        self.steer_pub.publish(scmd)
 
 if __name__ == '__main__':
     DBWNode()
