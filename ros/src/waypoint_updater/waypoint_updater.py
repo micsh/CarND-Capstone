@@ -30,7 +30,7 @@ LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this n
 
 # New defines
 RATE = 5
-TARGET_SPEED_MPH = 10 # Desired velocity in miles per hour
+TARGET_SPEED_MPH = 20 # Desired velocity in miles per hour
 TARGET_SPEED_MPS = (TARGET_SPEED_MPH * 1609.34) / (60 * 60) # Desired velocity in meters per second
 MAX_DECEL = .5
 LOGGING = False
