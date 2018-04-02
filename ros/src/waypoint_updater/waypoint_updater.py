@@ -61,7 +61,7 @@ class WaypointUpdater(object):
 
 	def loop(self):
 		while not rospy.is_shutdown():
-			if self.pose and self.waypointTree:
+			if self.pose and self.baseWaypoints:
 				# Find closest waypoint
 				nextWaypointIdx = self.NextWaypoint()
 				lane = self.generate_lane(nextWaypointIdx)
@@ -71,8 +71,8 @@ class WaypointUpdater(object):
 
 
 	def NextWaypoint(self):
-		x = self.pose.position.x
-		y = self.pose.position.y
+		x = self.pose.pose.position.x
+		y = self.pose.pose.position.y
 		# Query the KD tree to give us the first closest item to the current vehicle (x,y) position
 		# Because we only need the index of this coordinate we use [1]
 		closestIdx = self.waypointTree.query([x, y], 1)[1]
@@ -162,8 +162,8 @@ class WaypointUpdater(object):
 	def waypoints_cb(self, msg):
 		# Publish to /base_waypoints only once
 		wpCount = len(msg.waypoints)
-		if self.baseWaypoints is None:
-			self.baseWaypoints = msg.waypoints
+		self.baseWaypoints = msg
+		if self.waypoints2D is None:
 			self.waypoints2D = [[waypoint.pose.pose.position.x, waypoint.pose.pose.position.y] for waypoint in msg.waypoints]
 			self.waypointTree = KDTree(self.waypoints2D)
 			rospy.loginfo('[waypoint updater] Received %s waypoints', wpCount)
