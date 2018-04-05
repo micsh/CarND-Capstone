@@ -10,7 +10,7 @@ Chih Sheng Chen (bobon@mirlab.org)<br/>
 Theodore King (etphilipking@gmail.com)<br/>
 Michael Shalala (mshalala@gmail.com)<br/>
 Kaiyu Qian (kaiyu_q@yahoo.com)<br/>
-Franz Pucher (franz.pucher@gmail.com)<br/>
+Franz Pucher - Team Lead (franz.pucher@gmail.com)<br/>
 
 ## Introduction
 
