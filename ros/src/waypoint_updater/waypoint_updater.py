@@ -172,7 +172,7 @@ class WaypointUpdater(object):
             self.baseWaypoints = msg.waypoints
             self.waypoints2D = [[waypoint.pose.pose.position.x, waypoint.pose.pose.position.y] for waypoint in msg.waypoints]
             self.waypointTree = KDTree(self.waypoints2D)
-            rospy.loginfo('[waypoint updater] Received %s waypoints', wpCount)
+            if (LOGGING): rospy.loginfo('[waypoint updater] Received %s waypoints', wpCount)
 
 
     def traffic_cb(self, msg):
