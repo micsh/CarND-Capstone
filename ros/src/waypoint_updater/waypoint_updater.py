@@ -30,7 +30,7 @@ LOOKAHEAD_WPS = 200 # Number of waypoints we will publish. You can change this n
 
 # New defines
 RATE = 5
-TARGET_SPEED_MPH = 20 # Desired velocity in miles per hour
+TARGET_SPEED_MPH = 25 # Desired velocity in miles per hour
 TARGET_SPEED_MPS = (TARGET_SPEED_MPH * 1609.34) / (60 * 60) # Desired velocity in meters per second
 MAX_DECEL = .5
 LOGGING = False
@@ -128,8 +128,8 @@ class WaypointUpdater(object):
             p = Waypoint()
             p.pose = wp.pose
 
-            # Two waypoints back from stopping line so that the front of the car stops in front of the stopping line
-            stop_idx = max(self.stopline_wp_idx - closest_idx - 2, 0)
+            # Three waypoints back from stopping line so that the front of the car stops in front of the stopping line
+            stop_idx = max(self.stopline_wp_idx - closest_idx - 3, 0)
             # Get the distance between the current way point i and the stop line idx - 2 
             # The Distance function returns zero if the vehicle is behind the stop line
             dist = self.Distance(waypoints, i, stop_idx)
