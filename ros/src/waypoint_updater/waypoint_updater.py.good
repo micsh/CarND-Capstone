@@ -124,28 +124,21 @@ class WaypointUpdater(object):
     def decelerate_waypoints(self, waypoints, closest_idx):
         # Create a new list of waypoints and do not mess up the base waypoints which are only received once
         temp = []
-        vel = self.get_waypoint_velocity(waypoints[0]) 
-
         for i, wp in enumerate(waypoints):
             p = Waypoint()
             p.pose = wp.pose
 
-            # Four waypoints back from stopping line so that the front of the car stops in front of the stopping line
-            stop_idx = max(self.stopline_wp_idx - closest_idx - 4, 0)
+            # Three waypoints back from stopping line so that the front of the car stops in front of the stopping line
+            stop_idx = max(self.stopline_wp_idx - closest_idx - 3, 0)
             # Get the distance between the current way point i and the stop line idx - 2 
             # The Distance function returns zero if the vehicle is behind the stop line
-            #dist = self.Distance(waypoints, i, stop_idx)
+            dist = self.Distance(waypoints, i, stop_idx)
             # Calculate the velocity depending on the distance to the stop line
             # The larger the distance the larger the velocity
-            #vel = math.sqrt(2 * MAX_DECEL * dist) # TODO: consider using a linear (constant) deceleration instead of the sqrt function
+            vel = math.sqrt(2 * MAX_DECEL * dist) # TODO: consider using a linear (constant) deceleration instead of the sqrt function
             # Set the velocity to zero if it is smaller than 1 mps
             if vel < 1.:
                 vel = 0.
-            else:
-                # Use linear decleration
-                vel -= 2.*vel/(stop_idx + 1)
-                #print("checkpoint:", i, vel, stop_idx)
- 
 			
             # To respect the maximum speed limit for each base waypoint
             # we avoid large velocity values which are possible depending on the the vehicle distance to the stopping line

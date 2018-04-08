@@ -5,7 +5,7 @@ from lowpass import LowPassFilter
 
 GAS_DENSITY = 2.858
 ONE_MPH = 0.44704
-LOGGING = False
+LOGGING = Fales 
 
 
 class Controller(object):
@@ -81,6 +81,8 @@ class Controller(object):
             throttle = 0.0
             decel = max(vel_error, self.parameters['decel_limit'])
             brake = abs(decel) * (self.parameters['vehicle_mass'] + self.parameters['fuel_capacity'] * GAS_DENSITY) * self.parameters['wheel_radius']
+            
+            if (LOGGING): rospy.loginfo('brake %s, throttle: %s', brake, throttle)
 
         
         '''
