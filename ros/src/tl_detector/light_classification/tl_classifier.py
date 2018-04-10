@@ -32,6 +32,7 @@ class TLClassifier(object):
 
         self._inference_counter = 0
         self._inference_stride = 16
+        self._pre_state = -1
 
     def get_classification(self, image):
         """Determines the color of the traffic light in the image
@@ -43,9 +44,9 @@ class TLClassifier(object):
         # Should get the image data and it's shape first
         self._inference_counter += 1
         if self._inference_counter%self._inference_stride != 0:
-            return TrafficLight.UNKNOWN
+            return self._pre_state
         image_h_original, image_w_original, c_num = image.shape  # for simulator, 600, 800, 3
-        state = TrafficLight.UNKNOWN
+
         image_expanded = np.expand_dims(image, axis=0)
 
         # Actual detection.
@@ -86,10 +87,11 @@ class TLClassifier(object):
         
         
                 if redCircles is not None:
-                      state = TrafficLight.RED
                       rospy.loginfo('red')
-                      return state
+                      self._pre_state = TrafficLight.RED
+                      return TrafficLight.RED
 
         rospy.loginfo('other')
+        self._pre_state = TrafficLight.UNKNOWN
         return TrafficLight.UNKNOWN
         
