@@ -30,6 +30,9 @@ class TLClassifier(object):
         self._sess = tf.Session(graph=detection_graph)
         rospy.loginfo("[CSChen] Get tensor variables and create session")
 
+        self._inference_counter = 0
+        self._inference_stride = 16
+
     def get_classification(self, image):
         """Determines the color of the traffic light in the image
         Args:
@@ -38,6 +41,9 @@ class TLClassifier(object):
             int: ID of traffic light color (specified in styx_msgs/TrafficLight)
         """
         # Should get the image data and it's shape first
+        self._inference_counter += 1
+        if self._inference_counter%self._inference_stride != 0:
+            return TrafficLight.UNKNOWN
         image_h_original, image_w_original, c_num = image.shape  # for simulator, 600, 800, 3
         state = TrafficLight.UNKNOWN
         image_expanded = np.expand_dims(image, axis=0)
@@ -83,7 +89,7 @@ class TLClassifier(object):
                       state = TrafficLight.RED
                       rospy.loginfo('red')
                       return state
-                else:
-                      rospy.loginfo('other')
-                      return TrafficLight.UNKNOWN
+
+        rospy.loginfo('other')
+        return TrafficLight.UNKNOWN
         
