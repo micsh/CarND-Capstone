@@ -8,7 +8,7 @@ import cv2, time
 class TLClassifier(object):
     def __init__(self):
         # Loading TF Model
-        model_path = '/home/carnd/teamshare/frozen_sim/frozen_inference_graph.pb'
+        model_path = '../../../../final_mobilenet_frozen_sim/frozen_inference_graph.pb'
         detection_graph = tf.Graph()
 
         with detection_graph.as_default():
@@ -23,8 +23,8 @@ class TLClassifier(object):
         self._detection_boxes = detection_graph.get_tensor_by_name('detection_boxes:0')
         self._detection_scores = detection_graph.get_tensor_by_name('detection_scores:0')
         self._detection_classes = detection_graph.get_tensor_by_name('detection_classes:0')
-        self._num_detections = detection_graph.get_tensor_by_name('num_detections:0')
-
+        #self._num_detections = detection_graph.get_tensor_by_name('num_detections:0')
+        #config = tf.ConfigProto(device_count={"CPU":64}, inter_op_parallelism_threads=0,intra_op_parallelism_threads=0)
         self._sess = tf.Session(graph=detection_graph)
         rospy.loginfo("[CSChen] Get tensor variables and create session")
 
@@ -37,59 +37,51 @@ class TLClassifier(object):
         """
         # Should get the image data and it's shape first
         image_h_original, image_w_original, c_num = image.shape  # for simulator, 600, 800, 3
-        #rospy.loginfo('[CSChen] image.shape = {}'.format(image.shape))
         state = TrafficLight.UNKNOWN
         image_expanded = np.expand_dims(image, axis=0)
-        #rospy.loginfo('[CSChen] image_expanded.shape = {}'.format(image_expanded.shape))
-        stime = time.time()
+
         # Actual detection.
-        (boxes, scores, classes, num) = self._sess.run(
-          [self._detection_boxes, self._detection_scores, self._detection_classes, self._num_detections],
-          feed_dict={self._image_tensor: image_expanded})
-        etime = time.time()
+        (boxes,scores,classes) = self._sess.run(
+                    [self._detection_boxes,self._detection_scores, self._detection_classes],
+                    feed_dict={self._image_tensor: image_expanded})
+
         boxes = np.squeeze(boxes)
+        classes = np.squeeze(classes)
         scores = np.squeeze(scores)
-        #rospy.loginfo('[CSChen] After TensorFlow with {}! len(boxes)={}'.format(etime-stime,len(boxes)))
-        #for box in boxes:
-        #    ymin, xmin, ymax, xmax = box
-        #    xmin, xmax = xmin*800, xmax*800
-        #    ymin, ymax = ymin*600, ymax*600
-        #rospy.loginfo('[CSChen] boxes (y,x) = from ({},{}) to ({},{})'.format(ymin,xmin,ymax,xmax))
-        boxes = np.squeeze(boxes)
-        #cv2.imwrite("/home/carnd/images/camera_img.jpg",image)
-        for i in range(len(scores)):
-                ymin, xmin, ymax, xmax = boxes[i]
+
+        #rospy.loginfo('%s  %s',classes, scores)
+        #rospy.loginfo('%s', classes[np.argmax(scores)])
+        #return TrafficLight.UNKNOWN
+        final_boxes = None
+        final_boxes = boxes[scores>0.6]
+
+
+        for i in range(len(final_boxes)):
+                ymin, xmin, ymax, xmax = final_boxes[i]
                 xmin, xmax = xmin*800, xmax*800
                 ymin, ymax = ymin*600, ymax*600
-                #rospy.loginfo('Box   number: %s, score : %s, box(y,x) = (%s,%s) to (%s,%s)', i, scores[i], ymin,xmin,ymax,xmax)
+        
                 box_im=None
-                if scores[i] >=0.9:
-                        rospy.loginfo("found traffic light")
-                        box_im = image[int(ymin):int(ymax),int(xmin):int(xmax),:]
-                        #cv2.imwrite("/home/carnd/images/camera_img_inloop.jpg",image)
-                        #cv2.imwrite("/home/carnd/images/camera_img_"+str(j)+".jpg",box_im)
-                        red_Im = cv2.cvtColor(box_im, cv2.COLOR_BGR2HSV)
-
-                        #Perform Thresholding
-                        # Filter red color for sim
-                        lowerRed = np.array([0,50,50])
-                        upperRed = np.array([10,255,255])
-                        redSim = cv2.inRange(red_Im, lowerRed, upperRed)
-
-                        #Filter red color for real test site
-                        lowerRed = np.array([170,50,50])
-                        upperRed = np.array([180,255,255])
-                        redReal = cv2.inRange(red_Im, lowerRed, upperRed)
-
-                        #Combine filtered images using full weights of 1.0 and no offset (gamma =0)
-                        combinedRedImage = cv2.addWeighted(redSim, 1.0, redReal, 1.0, 0.0)
-
-                        blurredRedImage = cv2.GaussianBlur(combinedRedImage, (15,15),0)
-
-                        # Find circles in the image that contain only red circles
-                        redCircles = cv2.HoughCircles(blurredRedImage, cv2.HOUGH_GRADIENT, 0.5, 41, param1=70, param2 = 30, minRadius = 5, maxRadius = 150)
-                        if redCircles is not None:
-                                #cv2.imwrite("/home/carnd/images/camera_img_red"+str(j)+".jpg",box_im)
-                                state = TrafficLight.RED
-
-        return state
+                box_im = image[int(ymin):int(ymax),int(xmin):int(xmax),:]
+                red_Im = cv2.cvtColor(box_im, cv2.COLOR_BGR2HSV)
+                lowerRed = np.array([0,50,50])
+                upperRed = np.array([10,255,255])
+                redSim = cv2.inRange(red_Im, lowerRed, upperRed)
+                lowerRed = np.array([170,50,50])
+                upperRed = np.array([180,255,255])
+                redReal = cv2.inRange(red_Im, lowerRed, upperRed)
+        
+                combinedRedImage = cv2.addWeighted(redSim, 1.0, redReal, 1.0, 0.0)
+                blurredRedImage = cv2.GaussianBlur(combinedRedImage, (15,15),0)
+        
+                redCircles = cv2.HoughCircles(blurredRedImage, cv2.HOUGH_GRADIENT, 0.5, 41, param1=70, param2 = 30, minRadius = 5, maxRadius = 150)
+        
+        
+                if redCircles is not None:
+                      state = TrafficLight.RED
+                      rospy.loginfo('red')
+                      return state
+                else:
+                      rospy.loginfo('other')
+                      return TrafficLight.UNKNOWN
+        

@@ -44,8 +44,8 @@ class Controller(object):
         self.yaw = YawController(self.main_wheel_base,self.main_steer_ratio, self.min_speed, self.main_lat_accel, self.main_max_steer_angle)
         tau = 0.5 # 1/(2pi * tau) = cutoff frequency
         ts = 0.02 # Sample time
-        #self.steerLowPass= LowPassFilter(0.007,2.0)
-        #self.steer_lp = LowPassFilter(tau, ts)
+        #self.steerLowPass= LowPassFilter(0.2,0.1)
+        self.steer_lp = LowPassFilter(tau, ts)
         #self.throttle_lp = LowPassFilter(0.5,0.1)
         #self.throttle_lp = LowPassFilter(tau, ts)
         self.vel_lp = LowPassFilter(tau, ts)
@@ -103,6 +103,6 @@ class Controller(object):
 
         '''
         steer = self.yaw.get_steering(target_linear_vel, target_angular_vel, current_vel)
-        #steer = self.steerLowPass.filt(steer)
+        steer = self.steer_lp.filt(steer)
 
         return throttle, brake, steer
