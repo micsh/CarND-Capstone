@@ -4,11 +4,13 @@ import tensorflow as tf
 from os.path import join
 import numpy as np
 import cv2, time
+import os
 
 class TLClassifier(object):
     def __init__(self):
         # Loading TF Model
-        model_path = '../../../../final_mobilenet_frozen_sim/frozen_inference_graph.pb'
+        model_path = join(os.getcwd(),'../../final_mobilenet_frozen_sim/frozen_inference_graph.pb')
+        rospy.loginfo("[CSChen] loading model from = {}".format(model_path))
         detection_graph = tf.Graph()
 
         with detection_graph.as_default():
