@@ -1,4 +1,31 @@
+# System Integration Project
+
 This is the project repo for the final project of the Udacity Self-Driving Car Nanodegree: Programming a Real Self-Driving Car. For more information about the project, see the project introduction [here](https://classroom.udacity.com/nanodegrees/nd013/parts/6047fe34-d93c-4f50-8336-b70ef10cb4b2/modules/e1a23b06-329a-4684-a717-ad476f0d8dff/lessons/462c933d-9f24-42d3-8bdc-a08a5fc866e4/concepts/5ab4b122-83e6-436d-850f-9f4d26627fd9).
+
+## Team Members
+
+This repository is maintained by:
+
+Chih Sheng Chen (bobon@mirlab.org)<br/>
+Theodore King (etphilipking@gmail.com)<br/>
+Michael Shalala (mshalala@gmail.com)<br/>
+Kaiyu Qian (kaiyu_q@yahoo.com)<br/>
+Franz Pucher - Team Lead (franz.pucher@gmail.com)<br/>
+
+## Introduction
+
+The purpose of this project is to develope code in ROS to run on a autonomous vehicle.
+The code consists of ROS nodes which are shown in the ROS graph. 
+It was rquired to develp the following nodes 
+
+- Waypoint updater
+- DBW node
+- Traffic light detection/classification
+
+![ROS Graph](final-project-ros-graph-v2.png)
+
+
+## Installation
 
 Please use **one** of the two installation options, either native **or** docker installation.
 
